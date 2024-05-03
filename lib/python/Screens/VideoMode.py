@@ -687,9 +687,9 @@ class AutoVideoMode(Screen):
 				f.close()
 			except:
 				video_width = 0
-		if path.exists("/proc/stb/vmpeg/0/progressive"):
+		if path.exists("/etc/stb/vmpeg/0/progressive"):
 			try:
-				f = open("/proc/stb/vmpeg/0/progressive", "r")
+				f = open("/etc/stb/vmpeg/0/progressive", "r")
 				video_pol = "p" if int(f.read(),16) else "i"
 				f.close()
 			except:
