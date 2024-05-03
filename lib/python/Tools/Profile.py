@@ -1,74 +1,81 @@
-# the implementation here is a bit crappy.
 import time
-from Directories import resolveFilename, SCOPE_CONFIG
-from boxbranding import getBoxType
-
-boxtype = getBoxType()
-
-PERCENTAGE_START = 50
+from Directories import resolveFilename, SCOPE_CONFIG, fileExists
+from HardInfo import HardInfo
+vfdSIZE = HardInfo().get_vfdsize()
+if HardInfo().get_rcstype() == 'HS7429':
+    vfdSIZE += 1
+PERCENTAGE_START = 80
 PERCENTAGE_END = 100
-
+LAST_PERCENTAGE = 0
 profile_start = time.time()
- 
 profile_data = {}
 total_time = 1
 profile_file = None
-
+LastVFDtext = ''
 try:
-	f = open(resolveFilename(SCOPE_CONFIG, "profile"), "r")
-	profile_old = f.readlines()
-	f.close()
+    profile_old = open(resolveFilename(SCOPE_CONFIG, 'profile'), 'r').readlines()
+    t = None
+    for line in profile_old:
+        t, id = line[:-1].split('\t')
+        t = float(t)
+        total_time = t
+        profile_data[id] = t
 
-	t = None
-	for line in profile_old:
-		(t, id) = line[:-1].split('\t')
-		t = float(t)
-		total_time = t
-		profile_data[id] = t
+    if total_time == 0:
+        total_time = 1
 except:
-	print "no profile data available"
+    print 'no profile data available'
 
 try:
-	profile_file = open(resolveFilename(SCOPE_CONFIG, "profile"), "w")
+    profile_file = open(resolveFilename(SCOPE_CONFIG, 'profile'), 'w')
 except IOError:
-	print "WARNING: couldn't open profile file!"
+    print "WARNING: couldn't open profile file!"
 
 def profile(id):
-	now = time.time() - profile_start
-	if profile_file:
-		profile_file.write("%7.3f\t%s\n" % (now, id))
+    global LAST_PERCENTAGE
+    global LastVFDtext
+    global profile_file
+    now = time.time() - profile_start
+    if profile_file:
+        profile_file.write('%.2f\t%s\n' % (now, id))
+        print '%s\t%.2f\t%s\n' % (time.strftime('%H:%M:%S', time.localtime()), now, id)
+        if id in profile_data:
+            t = profile_data[id]
+            perc = t * (PERCENTAGE_END - PERCENTAGE_START) / total_time + PERCENTAGE_START
+            if perc > LAST_PERCENTAGE:
+                if vfdSIZE == 4:
+                    CurrentText = 'openTS-E2-%d' % (perc - 1)
+                    CurrentText = CurrentText[0:4]
+                if vfdSIZE == 5:
+                    CurrentText = 'openTS-E2:%d' % (perc - 1)
+                    CurrentText = CurrentText[0:5]
+                else:
+                    if vfdSIZE == 8:
+                        CurrentText = 'openTS-%d' % perc
+                        CurrentText = CurrentText[0:8]
+                    else:
+                        CurrentText = 'openTS-%d' % perc
+                        CurrentText = CurrentText[0:14]
+                    try:
+                        open('/proc/progress', 'w').write('%d \n' % perc)
+                        if LastVFDtext != CurrentText and perc < 100:
+                            print '[Profile] %s' % CurrentText
+                            open('/dev/vfd', 'w').write(CurrentText)
+                            LastVFDtext = CurrentText
+                    except IOError:
+                        pass
 
-		if id in profile_data:
-			t = profile_data[id]
-			if total_time:
-				perc = t * (PERCENTAGE_END - PERCENTAGE_START) / total_time + PERCENTAGE_START
-			else:
-				perc = PERCENTAGE_START
-			try:
-				if boxtype in ("classm", "axodin", "axodinc", "starsatlx", "evo", "genius", "galaxym6" ):
-					f = open("/dev/dbox/oled0", "w")
-					f.write("%d" % perc)
-				elif boxtype in ('gb800solo', 'gb800se', 'gb800seplus', 'gbultrase'):
-					f = open("/dev/mcu", "w")
-					f.write("%d  \n" % perc)
-				elif boxtype in ("mixosf5", "gi9196m", "osmini", "spycatmini", "osminiplus", "spycatminiplus"):
-					f = open("/proc/progress", "w")
-					f.write("%d" % perc)
-				elif boxtype in ("xpeedlx3", "sezammarvel", "atemionemesis", "fegasusx3", "fegasusx5s", "fegasusx5t"):
-					f = open("/proc/vfd", "w")
-					f.write("Loading %d %%" % perc)
-				elif boxtype in ('amikomini', 'amiko8900', 'sognorevolution', 'arguspingulux', 'arguspinguluxmini', 'sparkreloaded', 'sabsolo', 'sparklx', 'gis8120'):
-					f = open("/proc/vfd", "w")
-					f.write("%d \n" % perc)
-				else:
-					f = open("/proc/progress", "w")
-					f.write("%d \n" % perc)
-				f.close()
-			except IOError:
-				pass
+                LAST_PERCENTAGE = perc
+
 
 def profile_final():
-	global profile_file
-	if profile_file is not None:
-		profile_file.close()
-		profile_file = None
+    global profile_file
+    try:
+        open('/proc/progress', 'w').write('100 \n')
+    except:
+        pass
+
+    if profile_file is not None:
+        profile_file.close()
+        profile_file = None
+    return
