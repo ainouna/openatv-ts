@@ -34,9 +34,54 @@ AM_CONDITIONAL(HAVE_GIT_DIR, test -d "$srcdir/.git")
 AM_CONDITIONAL(HAVE_FAKE_GIT_DIR, test -f "$srcdir/.git/last_commit_info")
 
 dnl versions of gstreamer and plugins-base
+AC_ARG_ENABLE(run_from_usb,
+	[  --enable-run_from_usb      enable run_from_usb stuff],
+	[AC_DEFINE(ENABLE_RUN_FROM_USB, 1, [enable run_from_usb stuff])])
+AM_CONDITIONAL(ENABLE_RUN_FROM_USB, test "$enable_run_from_usb" = "yes")
+if test "$run_from_usb" = "yes"; then
+	AC_DEFINE(ENABLE_RUN_FROM_USB, 1, [enable run_from_usb stuff])
+fi
+
+AC_ARG_ENABLE(hs7429,
+	[  --enable-hs7429            enable hs7429 stuff],
+	[AC_DEFINE(ENABLE_HS7429, 1, [enable hs7429 stuff])])
+	
+AM_CONDITIONAL(ENABLE_HS7429, test "$enable_hs7429" = "yes")
+if test "$enable_hs7429" = "yes"; then
+	AC_DEFINE(ENABLE_HS7429, 1, [enable hs7429 stuff])
+fi
+
+AC_ARG_ENABLE(spark,
+	[  --enable-spark          enable spark stuff],
+	[AC_DEFINE(ENABLE_SPARK,1,[enable spark stuff])])
+
+AM_CONDITIONAL(ENABLE_SPARK,test "$enable_spark" = "yes")
+if test "$enable_spark" = "yes"; then
+	AC_DEFINE(ENABLE_SPARK,1,[enable spark stuff])
+fi
+
+AC_ARG_ENABLE(spark7162,
+	[  --enable-spark7162          enable spark7162 stuff],
+	[AC_DEFINE(ENABLE_SPARK7162,1,[enable spark7162 stuff])])
+
+AM_CONDITIONAL(ENABLE_SPARK7162,test "$enable_spark7162" = "yes")
+if test "$enable_spark7162" = "yes"; then
+	AC_DEFINE(ENABLE_SPARK7162,1,[enable spark7162 stuff])
+fi
+
+AC_ARG_ENABLE(libeplayer3,
+	[  --enable-libeplayer3          enable TDT libeplayer3 as player engine supportt],
+	[AC_DEFINE(ENABLE_LIBEPLAYER3, 1, [enable TDT libeplayer3 as player engine support])])
+if test "$enable_libeplayer3" = "yes"; then
+	AC_DEFINE(ENABLE_LIBEPLAYER3, 1, [include TDT libeplayer3 as player engine support])
+fi
+AM_CONDITIONAL(ENABLE_LIBEPLAYER3, test "$enable_libeplayer3" = "yes")
+
+
+
 AC_ARG_WITH(gstversion,
 	AS_HELP_STRING([--with-gstversion],[use gstreamer version (major.minor)]),
-	[GST_MAJORMINOR=$withval],[GST_MAJORMINOR=0.10])
+	[GST_MAJORMINOR=$withval],[GST_MAJORMINOR=1.0])
 
 PKG_CHECK_MODULES(GSTREAMER, gstreamer-$GST_MAJORMINOR gstreamer-pbutils-$GST_MAJORMINOR)
 PKG_CHECK_MODULES(BASE, [freetype2 fribidi gstreamer-$GST_MAJORMINOR gstreamer-pbutils-$GST_MAJORMINOR libdvbsi++ libpng libxml-2.0 sigc++-1.2 libssl libcrypto])
@@ -81,6 +126,7 @@ AM_CONDITIONAL(JEPSSEN, test `echo "$BOXTYPE" | cut -b 1-5` == "media")
 AM_CONDITIONAL(SOGNO, test `echo "$BOXTYPE" | cut -b 1-5` == "sogno")
 AM_CONDITIONAL(SKYLAKE, test `echo "$BOXTYPE" | cut -b 1-2` == "hd")
 AM_CONDITIONAL(SPARK, test `echo "$BOXTYPE" | cut -b 1-5` == "spark")
+AM_CONDITIONAL(HS7429, test `echo "$BOXTYPE" | cut -b 1-5` == "hs7429")
 AM_CONDITIONAL(UNIBOXHDE, test "$BOXTYPE" == uniboxhde)
 AM_CONDITIONAL(EVO, test `echo "$BOXTYPE" | cut -b 1-4` == "enfi")
 AM_CONDITIONAL(MIRACLEBOX, test `echo "$BOXTYPE" | cut -b 1-2` == "mb")
@@ -642,6 +688,10 @@ if test "$BOXTYPE" == "dags7335" -o "$BOXTYPE" == "dags7356" -o "$BOXTYPE" == "d
 fi
 
 if test "$BOXTYPE" == "spark" -o "$BOXTYPE" == "spark7162"; then
+	AC_DEFINE(FORCE_ADVANCED_REMOTE, 1,[define to fixup the input device identification when the remote control is actually an 'advanced' remote (with play/forward/rewind keys)])
+fi
+
+if test "$BOXTYPE" == "hs7429" ; then
 	AC_DEFINE(FORCE_ADVANCED_REMOTE, 1,[define to fixup the input device identification when the remote control is actually an 'advanced' remote (with play/forward/rewind keys)])
 fi
 
